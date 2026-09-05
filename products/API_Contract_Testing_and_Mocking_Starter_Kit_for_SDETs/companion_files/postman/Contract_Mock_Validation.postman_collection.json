@@ -1,0 +1,309 @@
+{
+  "info": {
+    "name": "Contract Mock Validation",
+    "description": "Validates WireMock mock server responses — 3 folders, 5 requests, pm.test per request. Set baseUrl to your WireMock URL (default http://localhost:8080). Works against contract-mock-demo-app too (http://localhost:3000).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "WireMock mock server URL — change to http://localhost:3000 for demo-app, or http://localhost:9999 if you changed port"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request: set timestamp for chaining / debugging",
+          "pm.collectionVariables.set(\"timestamp\", new Date().toISOString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Collection-level test — runs after EVERY request",
+          "pm.test(\"Response time is acceptable (<1000ms)\", function () {",
+          "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+          "});",
+          "pm.test(\"Content-Type is JSON where expected\", function () {",
+          "  const ct = pm.response.headers.get(\"Content-Type\");",
+          "  if (pm.response.code !== 204) {",
+          "    pm.expect(ct).to.include(\"application/json\");",
+          "  }",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "description": "Health check — verifies mock/provider is running",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Health endpoint — should return 200 { status: ok }"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Body has status ok\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql(\"ok\");",
+                  "  pm.expect(json.version).to.be.a(\"string\");",
+                  "});",
+                  "pm.test(\"Response time <500ms\", function () {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User API — matches Pact templates 01-03 and WireMock mappings",
+      "item": [
+        {
+          "name": "GET User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            },
+            "description": "Get user 1 — matches Pact template 01 + WireMock get-user.json"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Body has correct user shape\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.be.an(\"object\");",
+                  "  pm.expect(json.id).to.be.a(\"number\");",
+                  "  pm.expect(json.name).to.be.a(\"string\");",
+                  "  pm.expect(json.email).to.match(/^[^@]+@[^@]+\\.[^@]+$/);",
+                  "  pm.expect(json.active).to.be.a(\"boolean\");",
+                  "  pm.expect(json.tags).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Schema validation\", function () {",
+                  "  // Minimal schema check via pm.expect (full JSON schema via tv4/ajv if needed)",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property(\"id\");",
+                  "  pm.expect(json).to.have.property(\"name\");",
+                  "  pm.expect(json).to.have.property(\"email\");",
+                  "});",
+                  "pm.test(\"Save userId for chaining\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set(\"userId\", json.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Smith\",\n  \"email\": \"bob.new@example.com\",\n  \"tags\": [\"developer\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Create user — matches Pact template 02 + WireMock create-user.json"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Body has created user\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.id).to.be.a(\"number\");",
+                  "  pm.expect(json.name).to.eql(\"Bob Smith\");",
+                  "  pm.expect(json.email).to.match(/^[^@]+@[^@]+\\.[^@]+$/);",
+                  "});",
+                  "pm.test(\"Response time <500ms\", function () {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Search Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?search=alice&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "search", "value": "alice" },
+                { "key": "page", "value": "1" }
+              ]
+            },
+            "description": "Search users — matches Pact template 03 + WireMock search-users.json"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Body has paginated users\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.users).to.be.an(\"array\");",
+                  "  pm.expect(json.total).to.be.a(\"number\");",
+                  "  pm.expect(json.page).to.eql(1);",
+                  "  pm.expect(json.users.length).to.be.at.least(1);",
+                  "});",
+                  "pm.test(\"First user matches search\", function () {",
+                  "  const json = pm.response.json();",
+                  "  if (json.users.length > 0) {",
+                  "    pm.expect(json.users[0].name.toLowerCase()).to.include(\"alice\");",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "description": "Error contracts — matches Pact template 04",
+      "item": [
+        {
+          "name": "GET Non-existent User → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/999",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "999"]
+            },
+            "description": "Unknown user — should return 404 { error, message, statusCode }"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body has error field\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.error).to.be.a(\"string\");",
+                  "  pm.expect(json.error.toLowerCase()).to.include(\"not found\");",
+                  "  pm.expect(json.statusCode).to.eql(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Invalid User → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"email\": \"not-an-email\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Invalid body — should return 422 { errors, message, statusCode }"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422\", function () {",
+                  "  pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test(\"Body has errors array\", function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.errors).to.be.an(\"array\");",
+                  "  pm.expect(json.errors.length).to.be.at.least(1);",
+                  "  pm.expect(json.errors[0].field).to.be.a(\"string\");",
+                  "  pm.expect(json.statusCode).to.eql(422);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

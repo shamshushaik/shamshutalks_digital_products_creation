@@ -1,0 +1,22 @@
+# WireMock — Docker Compose (WireMock 3.13.2)
+# What: One-command mock server for team sharing — same as docker run but declarative.
+# Why: Reproducible, versioned, mounts mappings — no manual docker run flags.
+# Where: companion_files/wiremock-setup/docker-compose.yml
+# How: docker-compose up  (or docker compose up for Docker Compose v2)
+# Expected: WireMock at http://localhost:8080 + curl http://localhost:8080/__admin/mappings → 3 mappings
+# What if: Port 8080 in use → change "8080:8080" to "9999:8080" and update {{baseUrl}} in Postman
+#          Volume mount fails on Windows → use absolute path or run via WSL2
+# Verified: 2026-09-04 against https://wiremock.org/docs/standalone/docker/
+
+services:
+  wiremock:
+    image: "wiremock/wiremock:3.13.2"
+    container_name: wiremock-contract-mock
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./03-mappings:/home/wiremock
+    entrypoint: ["/docker-entrypoint.sh", "--global-response-templating", "--enable-stub-cors", "--verbose"]
+    # Alternative via env var (since 3.2.0-2):
+    # environment:
+    #   WIREMOCK_OPTIONS: "--global-response-templating --enable-stub-cors --verbose"

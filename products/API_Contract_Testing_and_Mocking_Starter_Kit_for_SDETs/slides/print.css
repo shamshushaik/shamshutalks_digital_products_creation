@@ -1,0 +1,103 @@
+/* print.css — Dual-Mode PDF Export for Cinematic Slides
+   Flattened final state: all slides visible, no animations, no clipping
+   Usage: linked from slides/index.html via <link rel="stylesheet" href="print.css" media="print">
+*/
+
+@media print {
+  @page {
+    size: 1920px 1080px;
+    margin: 0;
+  }
+
+  /* Kill all motion */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  html, body {
+    background: #fff !important;
+    width: 1920px !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .stage-wrap {
+    display: block !important;
+    width: 1920px !important;
+    height: auto !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  .stage {
+    width: 1920px !important;
+    height: auto !important;
+    transform: none !important;
+    overflow: visible !important;
+    display: block !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Flatten: every slide becomes a printed page */
+  .slide {
+    position: relative !important;
+    inset: auto !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: none !important;
+    display: block !important;
+    width: 1920px !important;
+    height: 1080px !important;
+    min-height: 1080px !important;
+    overflow: hidden !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    visibility: visible !important;
+  }
+
+  .slide:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Fragments: all visible in print */
+  .fragment,
+  .fragment.visible,
+  .fragment.hidden {
+    opacity: 1 !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
+
+  /* Hide interactive chrome */
+  .progress,
+  .progress-bar,
+  .counter,
+  .nav-dots,
+  .nav-hint,
+  .click-hint {
+    display: none !important;
+  }
+
+  /* Ensure backgrounds print */
+  .slide-bg,
+  .vignette,
+  .grain,
+  .glow {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Prevent clipping */
+  .slide-inner {
+    overflow: visible !important;
+  }
+}

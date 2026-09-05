@@ -1,0 +1,39 @@
+{
+  "id": "create-user",
+  "name": "Create user — POST /users",
+  "request": {
+    "method": "POST",
+    "url": "/users",
+    "headers": {
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.name"
+      },
+      {
+        "matchesJsonPath": "$.email"
+      }
+    ]
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
+    },
+    "jsonBody": {
+      "id": 6,
+      "name": "Bob Smith",
+      "email": "bob.new@example.com",
+      "active": true,
+      "createdAt": "2024-06-01T12:00:00.000Z",
+      "tags": ["developer"]
+    },
+    "transformers": ["response-template"]
+  }
+}

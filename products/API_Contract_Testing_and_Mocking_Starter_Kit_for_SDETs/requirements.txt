@@ -1,0 +1,46 @@
+# API Contract Testing and Mocking Starter Kit — Dependencies
+# What: Lists all free/open-source tools this kit uses
+# Why: So you know what to install and where to get it
+# Where: Product root — companion_files/contract-mock-demo-app/package.json has Node deps
+# How: npm install in each project folder (demo-app, practice-lab)
+# Note: This is a Node.js kit — no Python requirements. ReportLab is build-time only for PDF generation.
+
+# ── Node.js (Runtime) ─────────────────────────────────────────────────
+# Download: https://nodejs.org/en/download  (18+ required, 20 LTS recommended)
+# Verify: node -v  (should be v18+)
+
+# ── Demo App & Pact Templates (companion_files/contract-mock-demo-app/) ─
+# Install: cd companion_files/contract-mock-demo-app && npm install
+# Packages (see package.json):
+#   express@^4.18.2          — Demo provider API (MIT)
+#   cors@^2.8.5               — CORS for UI-against-mock (MIT)
+#   @pact-foundation/pact@^17.1.3 — Contract testing (MIT) — https://github.com/pact-foundation/pact-js
+#   jest@^29.7.0              — Test runner (MIT) — https://jestjs.io/
+#   axios@^1.6.7              — HTTP client in tests (MIT)
+
+# ── Practice Lab (companion_files/contract-mock-practice-lab/) ───────
+# Install: cd companion_files/contract-mock-practice-lab && npm install
+# Same packages as demo app (Pact + Jest + Axios)
+
+# ── WireMock (Mock Server) ────────────────────────────────────────────
+# Option A — Standalone JAR (needs Java 11+):
+#   Download: https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/3.13.2/wiremock-standalone-3.13.2.jar
+#   Java: https://adoptium.net/temurin/releases/ (Eclipse Temurin 17 LTS, free)
+#   Verify: java -version
+# Option B — Docker (no Java needed):
+#   Image: wiremock/wiremock:3.13.2 — https://hub.docker.com/r/wiremock/wiremock
+#   Docker Desktop: https://www.docker.com/products/docker-desktop/
+#   Verify: docker --version
+# Docs: https://wiremock.org/docs/
+
+# ── Postman (Collection Validation) ───────────────────────────────────
+# Download: https://www.postman.com/downloads/ (free tier)
+# Collection: companion_files/postman/Contract_Mock_Validation.postman_collection.json (v2.1)
+# Schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+
+# ── PDF Generation (Build-time only, not needed by buyer) ─────────────
+# reportlab==4.2.0  — https://www.reportlab.com/  (BSD, for generating the 35-page PDF)
+# Pillow==10.4.0    — image support for PDF
+# Install (if building PDF): pip install -r requirements.txt
+reportlab==4.2.0
+Pillow==10.4.0

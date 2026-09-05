@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "Alice Johnson",
+    "email": "alice@example.com",
+    "active": true,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "tags": ["admin", "qa"]
+  },
+  {
+    "id": 2,
+    "name": "Bob Smith",
+    "email": "bob@example.com",
+    "active": true,
+    "createdAt": "2024-02-20T14:00:00.000Z",
+    "tags": ["developer"]
+  },
+  {
+    "id": 3,
+    "name": "Charlie Brown",
+    "email": "charlie@example.com",
+    "active": false,
+    "createdAt": "2024-03-10T09:15:00.000Z",
+    "tags": ["viewer"]
+  },
+  {
+    "id": 4,
+    "name": "Diana Prince",
+    "email": "diana@example.com",
+    "active": true,
+    "createdAt": "2024-04-05T11:45:00.000Z",
+    "tags": ["admin", "developer"]
+  },
+  {
+    "id": 5,
+    "name": "Evan Stone",
+    "email": "evan@example.com",
+    "active": true,
+    "createdAt": "2024-05-12T08:00:00.000Z",
+    "tags": ["qa"]
+  }
+]

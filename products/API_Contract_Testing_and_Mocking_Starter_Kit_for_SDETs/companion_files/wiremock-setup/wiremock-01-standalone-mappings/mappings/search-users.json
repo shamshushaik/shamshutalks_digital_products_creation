@@ -1,0 +1,45 @@
+{
+  "id": "search-users",
+  "name": "Search users — GET /users?search=&page=",
+  "request": {
+    "method": "GET",
+    "urlPath": "/users",
+    "queryParameters": {
+      "search": {
+        "equalTo": "alice"
+      },
+      "page": {
+        "equalTo": "1"
+      }
+    },
+    "headers": {
+      "Accept": {
+        "contains": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
+    },
+    "jsonBody": {
+      "users": [
+        {
+          "id": 1,
+          "name": "Alice Johnson",
+          "email": "alice@example.com",
+          "active": true,
+          "createdAt": "2024-01-15T10:30:00.000Z",
+          "tags": ["admin", "qa"]
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "pageSize": 10
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "get-user-by-id",
+  "name": "Get user by ID — GET /users/1",
+  "request": {
+    "method": "GET",
+    "url": "/users/1",
+    "headers": {
+      "Accept": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
+    },
+    "jsonBody": {
+      "id": 1,
+      "name": "Alice Johnson",
+      "email": "alice@example.com",
+      "active": true,
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "tags": ["admin", "qa"]
+    }
+  }
+}

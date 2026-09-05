@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Contract Testing & Mocking Starter Kit — ShamshuTalks</title>
+<link rel="stylesheet" href="print.css" media="print">
+<style>
+  :root{
+    --teal:#0E9A8B; --teal-dark:#0B7A6E; --teal-light:#E6F7F5; --teal-glow:rgba(14,154,139,0.18);
+    --slate:#1E293B; --slate-2:#334155; --slate-3:#475569; --slate-light:#F8FAFC;
+    --amber:#F59E0B; --amber-light:#FEF3C7;
+    --red:#EF4444; --green:#10B981; --yellow:#EAB308;
+    --bg:#0a0a0a; --white:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);font-family:Inter,Helvetica,Arial,sans-serif;overflow:hidden}
+  /* Stage */
+  .stage-wrap{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden;position:relative}
+  .stage{width:1920px;height:1080px;flex-shrink:0;position:relative;background:#fff;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,0.6);transform-origin:center center;will-change:transform}
+  /* Progress + chrome */
+  .progress{position:absolute;left:0;bottom:0;height:4px;background:var(--teal);width:0%;z-index:50;transition:width 0.5s ease}
+  .counter{position:absolute;top:28px;right:40px;z-index:50;background:rgba(30,41,59,0.85);color:#fff;font-size:13px;letter-spacing:0.12em;padding:8px 14px;border-radius:999px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.12)}
+  .nav-dots{position:absolute;right:22px;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:10px}
+  .nav-dots button{width:8px;height:8px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.25);cursor:pointer;transition:all 0.3s}
+  .nav-dots button.active{background:var(--teal);border-color:var(--teal);transform:scale(1.6)}
+  .nav-hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:50;color:rgba(255,255,255,0.7);font-size:12px;letter-spacing:0.14em;text-transform:uppercase;background:rgba(30,41,59,0.7);padding:8px 16px;border-radius:999px;backdrop-filter:blur(6px)}
+  /* Slides */
+  .slide{position:absolute;inset:0;opacity:0;pointer-events:none;transform:translateX(36px) scale(0.985);transition:opacity 0.65s ease, transform 0.65s ease;display:flex;flex-direction:column;overflow:hidden}
+  .slide.active{opacity:1;pointer-events:auto;transform:none}
+  .slide-bg{position:absolute;inset:0;z-index:0}
+  .vignette{position:absolute;inset:0;z-index:1;pointer-events:none;background:
+    radial-gradient(1200px 700px at 20% 10%, rgba(14,154,139,0.10), transparent 60%),
+    radial-gradient(900px 600px at 90% 90%, rgba(245,158,11,0.08), transparent 60%),
+    linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.18))}
+  .grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0.04;background-image:radial-gradient(rgba(0,0,0,0.6) 1px, transparent 1px);background-size:3px 3px}
+  .slide-inner{position:relative;z-index:3;padding:64px 72px 64px 72px;flex:1;display:flex;flex-direction:column;min-height:0}
+  /* Typography */
+  .eyebrow{font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:14px}
+  .eyebrow.amber{color:var(--amber)}
+  h1{font-size:64px;line-height:1.05;letter-spacing:-0.03em;color:var(--slate);font-weight:800}
+  h1 span.teal{color:var(--teal)}
+  h1 span.amber{color:var(--amber)}
+  h2{font-size:48px;line-height:1.08;letter-spacing:-0.025em;color:var(--slate);font-weight:800}
+  h3{font-size:22px;line-height:1.3;color:var(--slate);font-weight:700}
+  p{font-size:18px;line-height:1.6;color:var(--slate-2)}
+  p.lead{font-size:20px;line-height:1.6;color:var(--slate-2)}
+  .muted{color:var(--slate-3)}
+  /* Fragments */
+  .fragment{opacity:0;transform:translateY(14px);transition:opacity 0.55s ease, transform 0.55s ease}
+  .fragment.visible{opacity:1;transform:none}
+  /* Utilities */
+  .row{display:flex;gap:28px}
+  .col{flex:1;min-width:0}
+  .card{background:#fff;border:1px solid #E2E8F0;border-radius:18px;padding:22px 22px;box-shadow:0 8px 30px rgba(30,41,59,0.06)}
+  .card.teal{border-color:rgba(14,154,139,0.25);background:linear-gradient(180deg,#fff 0%, #F0FDFA 100%)}
+  .card.dark{background:var(--slate);color:#E2E8F0;border-color:#334155}
+  .card.dark h3,.card.dark p{color:#E2E8F0}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:0.04em}
+  .pill.teal{background:var(--teal);color:#fff}
+  .pill.slate{background:var(--slate);color:#fff}
+  .pill.amber{background:var(--amber);color:#1E293B}
+  .pill.outline{background:#fff;border:1px solid #E2E8F0;color:var(--slate-2)}
+  .kicker-line{width:64px;height:4px;background:var(--teal);border-radius:999px;margin:14px 0 18px 0}
+  .kicker-line.amber{background:var(--amber)}
+  .code{font-family:Consolas,ui-monospace,Menlo,monospace;font-size:13px;line-height:1.6;background:#0F172A;color:#E2E8F0;border-radius:14px;padding:18px 20px;overflow:auto;border:1px solid #1E293B;white-space:pre}
+  .code .c{color:#94A3B8}
+  .code .k{color:#5EEAD4}
+  .code .s{color:#FDE68A}
+  .code .n{color:#93C5FD}
+  .badge{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:800;padding:6px 10px;border-radius:999px}
+  .badge.teal{background:var(--teal-light);color:var(--teal-dark);border:1px solid rgba(14,154,139,0.25)}
+  .badge.amber{background:var(--amber-light);color:#92400E;border:1px solid rgba(245,158,11,0.3)}
+  .badge.slate{background:#F1F5F9;color:var(--slate-2);border:1px solid #E2E8F0}
+  .divider{height:1px;background:#E2E8F0;margin:18px 0}
+  /* Tables */
+  .tbl{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px;border:1px solid #E2E8F0;background:#fff}
+  .tbl th{background:var(--teal);color:#fff;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;padding:12px 14px;text-align:left;font-weight:800}
+  .tbl td{padding:12px 14px;font-size:14px;line-height:1.5;color:var(--slate-2);border-top:1px solid #F1F5F9;vertical-align:top}
+  .tbl tr:nth-child(even) td{background:#F8FAFC}
+  /* Hero nodes */
+  .nodes{position:absolute;inset:0;overflow:hidden;opacity:0.9}
+  .node{position:absolute;border-radius:50%;border:1px solid rgba(14,154,139,0.18);background:radial-gradient(circle at 30% 30%, rgba(14,154,139,0.18), rgba(14,154,139,0.02));backdrop-filter:blur(2px)}
+  /* Print flatten */
+  @media print{
+    html,body{background:#fff !important;overflow:visible !important;height:auto !important}
+    .stage-wrap{display:block !important;width:1920px !important;height:auto !important;background:#fff !important}
+    .stage{transform:none !important;width:1920px !important;height:auto !important;box-shadow:none !important}
+    .slide{position:relative !important;opacity:1 !important;transform:none !important;pointer-events:auto !important;display:flex !important;height:1080px !important;page-break-after:always !important;break-after:page !important;visibility:visible !important}
+    .fragment{opacity:1 !important;transform:none !important}
+    .progress,.counter,.nav-dots,.nav-hint{display:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="stage-wrap" id="wrap">
+  <div class="stage" id="stage">
+    <div class="progress" id="progress"></div>
+    <div class="counter" id="counter">1 / 19</div>
+    <div class="nav-dots" id="dots" aria-label="Slide navigation"></div>
+    <div class="nav-hint">← → or click to navigate • Press P to print</div>
+
+    <!-- SLIDE 1 — Title -->
+    <section class="slide active" data-title="Title">
+      <div class="slide-bg" style="background: radial-gradient(900px 600px at 15% 15%, #E6F7F5 0%, transparent 60%), radial-gradient(800px 500px at 85% 85%, #FEF3C7 0%, transparent 60%), linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="nodes" aria-hidden="true">
+        <div class="node" style="width:220px;height:220px;left:68%;top:8%"></div>
+        <div class="node" style="width:140px;height:140px;left:74%;top:42%"></div>
+        <div class="node" style="width:90px;height:90px;left:62%;top:58%"></div>
+        <div class="node" style="width:60px;height:60px;left:82%;top:62%"></div>
+        <div class="node" style="width:320px;height:320px;left:-6%;top:52%;opacity:0.5"></div>
+      </div>
+      <div class="vignette"></div><div class="grain"></div>
+      <div class="slide-inner">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="pill outline">SDET SERIES • STARTER KIT</div>
+          <div class="pill teal">@shamshutalks</div>
+        </div>
+        <div style="margin-top:42px;max-width:980px">
+          <div class="eyebrow">API Contract Testing & Mocking</div>
+          <h1>Test UI against<br><span class="teal">mocks</span> while<br>backend is still<br>being built.</h1>
+          <div class="kicker-line"></div>
+          <p class="lead" style="max-width:760px">Stop waiting for backend teams. 5 Pact.js templates + 3 WireMock setups + Postman collection + 14-category breaking-change checklist — one kit, zero waiting.</p>
+        </div>
+        <div class="row" style="margin-top:28px;max-width:980px">
+          <div class="card teal" style="flex:1"><div class="badge teal" style="margin-bottom:10px">PROMISE 1</div><h3 style="font-size:16px">5 Pact.js Templates</h3><p style="font-size:13px" class="muted">PactV3 + MatchersV3 • consumer-driven</p></div>
+          <div class="card teal" style="flex:1"><div class="badge amber" style="margin-bottom:10px">PROMISE 2</div><h3 style="font-size:16px">3 WireMock Setups</h3><p style="font-size:13px" class="muted">JAR • Docker • Compose</p></div>
+          <div class="card teal" style="flex:1"><div class="badge slate" style="margin-bottom:10px">PROMISE 5 • HERO</div><h3 style="font-size:16px">UI → Mock Workflow</h3><p style="font-size:13px" class="muted">10-step end-to-end</p></div>
+        </div>
+        <div style="margin-top:auto;display:flex;gap:14px;align-items:center;color:var(--slate-3);font-size:13px">
+          <span style="display:inline-flex;align-items:center;gap:8px"><span style="width:8px;height:8px;background:var(--teal);border-radius:50%;display:inline-block"></span> 35-page PDF + Demo App + Practice Lab</span>
+          <span>•</span><span>Node 18+ • Pact 17.1.3 • WireMock 3.13.2 • Free & Open-Source</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2 — The Problem -->
+    <section class="slide" data-title="The Problem">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div><div class="grain"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">01 — The Problem</div>
+        <h2>Backend changes <span style="color:var(--red)">break</span> frontend tests.</h2>
+        <div class="kicker-line" style="background:var(--red)"></div>
+        <div class="row" style="margin-top:10px">
+          <div class="col">
+            <div class="card" style="border-left:4px solid var(--red)">
+              <div class="badge" style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA">WITHOUT CONTRACT</div>
+              <h3 style="margin-top:12px">The break → the wait → the cost</h3>
+              <p style="margin-top:10px;font-size:16px">Backend renames <code style="background:#FEE2E2;padding:2px 6px;border-radius:6px">email → emailAddress</code> without warning. Frontend tests fail. Release blocked. Team waits weeks for backend to be “ready” before UI testing can even start.</p>
+              <div class="divider"></div>
+              <div class="row" style="gap:12px">
+                <div class="pill" style="background:#FEE2E2;color:#991B1B">🔴 Schema drift</div>
+                <div class="pill" style="background:#FEE2E2;color:#991B1B">🔴 Type drift</div>
+                <div class="pill" style="background:#FEE2E2;color:#991B1B">🔴 Contract drift</div>
+              </div>
+            </div>
+            <div class="fragment" style="margin-top:18px;display:flex;gap:12px;align-items:center">
+              <div style="width:44px;height:44px;border-radius:12px;background:#FEE2E2;display:grid;place-items:center;font-size:20px">⏳</div>
+              <p style="font-size:15px"><strong>Weeks wasted</strong> waiting for backend — while UI sits idle. No contract = no handshake.</p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card dark" style="position:relative;overflow:hidden">
+              <div style="position:absolute;inset:0;background:radial-gradient(600px 300px at 80% 0%, rgba(14,154,139,0.18), transparent 60%);pointer-events:none"></div>
+              <div class="badge teal">WITH CONTRACT</div>
+              <h3 style="margin-top:12px;color:#fff">Handshake before building</h3>
+              <p style="margin-top:10px;color:#CBD5E1;font-size:16px"><em>Contract testing is like a handshake agreement before building — both sides sign what the API will look like, so no surprises.</em></p>
+              <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:14px">
+                  <div style="font-size:12px;letter-spacing:0.12em;color:#5EEAD4;font-weight:800">CONSUMER</div>
+                  <div style="font-size:14px;color:#fff;margin-top:6px">“I need <code style="color:#FDE68A">GET /users/1 → {id, name, email}</code>”</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:14px">
+                  <div style="font-size:12px;letter-spacing:0.12em;color:#FDE68A;font-weight:800">PROVIDER</div>
+                  <div style="font-size:14px;color:#fff;margin-top:6px">“I will return exactly that — verified by <code style="color:#5EEAD4">Verifier</code>”</div>
+                </div>
+              </div>
+              <div style="margin-top:14px;display:flex;gap:10px">
+                <span class="pill teal">🤝 Pact file = contract</span><span class="pill amber">✅ can-i-deploy gate</span>
+              </div>
+            </div>
+            <div class="fragment card teal" style="margin-top:18px">
+              <strong style="color:var(--teal-dark)">What is a Contract?</strong>
+              <p style="font-size:14px;margin-top:6px">A written agreement between <strong>consumer</strong> (who uses the API) and <strong>provider</strong> (who builds it) about requests & responses. Like a restaurant menu: you order what’s on the menu, kitchen makes what’s on the menu.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3 — The Solution -->
+    <section class="slide" data-title="The Solution">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#0F172A 0%, #1E293B 100%);"></div>
+      <div class="vignette" style="background:radial-gradient(1000px 600px at 20% 20%, rgba(14,154,139,0.22), transparent 60%), radial-gradient(800px 500px at 90% 80%, rgba(245,158,11,0.14), transparent 60%)"></div>
+      <div class="slide-inner">
+        <div class="eyebrow" style="color:#5EEAD4">02 — The Solution</div>
+        <h2 style="color:#fff">Contract testing + <span style="color:#5EEAD4">mocking</span> — together.</h2>
+        <div class="kicker-line"></div>
+        <p class="lead" style="color:#CBD5E1;max-width:900px">Pact = <strong style="color:#fff">what SHOULD happen</strong> (contract). WireMock = <strong style="color:#fff">what DOES happen</strong> during dev/test (mock server). Together they cover the full loop.</p>
+        <div class="row" style="margin-top:22px">
+          <div class="card" style="flex:1;background:rgba(255,255,255,0.96)">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--teal-light);display:grid;place-items:center;font-size:20px">🤝</div>
+            <h3 style="margin-top:12px">Pact — Contract</h3>
+            <p style="font-size:14px;margin-top:8px">Consumer writes <code>given / uponReceiving / willRespondWith</code> → generates <code>pacts/*.json</code> → provider verifies via <code>Verifier</code>.</p>
+            <div class="divider"></div>
+            <div style="font-size:12px;color:var(--slate-3)"><strong>Role:</strong> handshake + CI gate • <strong>When:</strong> before deploy</div>
+          </div>
+          <div class="card" style="flex:1;background:rgba(255,255,255,0.96)">
+            <div style="width:44px;height:44px;border-radius:12px;background:#FEF3C7;display:grid;place-items:center;font-size:20px">🧱</div>
+            <h3 style="margin-top:12px">WireMock — Mock Server</h3>
+            <p style="font-size:14px;margin-top:8px">Mappings in <code>mappings/*.json</code> + <code>__files/</code> → UI hits <code>http://localhost:8080</code> → instant responses, no backend needed.</p>
+            <div class="divider"></div>
+            <div style="font-size:12px;color:var(--slate-3)"><strong>Role:</strong> UI dev + E2E • <strong>When:</strong> while backend builds</div>
+          </div>
+          <div class="card" style="flex:1;background:rgba(255,255,255,0.96)">
+            <div style="width:44px;height:44px;border-radius:12px;background:#F1F5F9;display:grid;place-items:center;font-size:20px">✅</div>
+            <h3 style="margin-top:12px">Postman — Validate</h3>
+            <p style="font-size:14px;margin-top:8px">Collection v2.1 → <code>pm.test</code> + <code>pm.expect</code> → validates status, headers, body, schema, response time.</p>
+            <div class="divider"></div>
+            <div style="font-size:12px;color:var(--slate-3)"><strong>Role:</strong> quick check • <strong>When:</strong> after mock is up</div>
+          </div>
+        </div>
+        <div class="fragment row" style="margin-top:18px;align-items:center">
+          <div style="flex:1;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:999px;padding:10px 16px;color:#E2E8F0;font-size:14px">
+            <span style="width:10px;height:10px;background:var(--teal);border-radius:50%;display:inline-block;box-shadow:0 0 12px var(--teal)"></span> Pact contract → WireMock mappings → UI dev → Verifier → <strong style="color:#5EEAD4">can-i-deploy</strong> → deploy
+          </div>
+          <div class="pill amber">No vendor lock-in • MIT / Apache 2.0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4 — Before vs After -->
+    <section class="slide" data-title="Before vs After">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">03 — Architecture</div>
+        <h2>Before vs After — <span class="teal">with</span> contract testing</h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:12px">
+          <div class="col card" style="border-top:4px solid var(--red);position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;right:0;background:#FEE2E2;color:#991B1B;font-size:11px;font-weight:800;letter-spacing:0.12em;padding:6px 12px;border-bottom-left-radius:12px">WITHOUT</div>
+            <h3 style="color:var(--red)">Chaos — no contract</h3>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:10px;background:#FEE2E2;display:grid;place-items:center">📱</span><div><div style="font-weight:700;color:var(--slate);font-size:14px">Frontend waits</div><div style="font-size:13px;color:var(--slate-3)">UI blocked until backend “ready”</div></div></div>
+              <div style="height:1px;background:#FEE2E2"></div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:10px;background:#FEE2E2;display:grid;place-items:center">🔧</span><div><div style="font-weight:700;color:var(--slate);font-size:14px">Backend changes silently</div><div style="font-size:13px;color:var(--slate-3)"><code>email → emailAddress</code> — no warning</div></div></div>
+              <div style="height:1px;background:#FEE2E2"></div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:10px;background:#FEE2E2;display:grid;place-items:center">💥</span><div><div style="font-weight:700;color:var(--slate);font-size:14px">Tests explode at release</div><div style="font-size:13px;color:var(--slate-3)">E2E fails, release blocked, hotfix</div></div></div>
+            </div>
+            <div style="margin-top:16px;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:12px 14px;font-size:13px;color:#991B1B">⏱️ <strong>Cost:</strong> weeks of idle UI time + late bugs + blocked deploys</div>
+          </div>
+          <div class="col card teal" style="border-top:4px solid var(--teal);position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;right:0;background:var(--teal);color:#fff;font-size:11px;font-weight:800;letter-spacing:0.12em;padding:6px 12px;border-bottom-left-radius:12px">WITH CONTRACT</div>
+            <h3 style="color:var(--teal-dark)">Handshake — with contract</h3>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:10px;background:var(--teal-light);display:grid;place-items:center">🤝</span><div><div style="font-weight:700;color:var(--slate);font-size:14px">Contract signed first</div><div style="font-size:13px;color:var(--slate-3)">Pact file = shared truth</div></div></div>
+              <div style="height:1px;background:#CCFBF1"></div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:10px;background:var(--teal-light);display:grid;place-items:center">🧱</span><div><div style="font-weight:700;color:var(--slate);font-size:14px">UI hits WireMock :8080</div><div style="font-size:13px;color:var(--slate-3)">Mock server → instant, no waiting</div></div></div>
+              <div style="height:1px;background:#CCFBF1"></div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:10px;background:var(--teal-light);display:grid;place-items:center">✅</span><div><div style="font-weight:700;color:var(--slate);font-size:14px">Verifier + can-i-deploy</div><div style="font-size:13px;color:var(--slate-3)">Breaking change blocked before deploy</div></div></div>
+            </div>
+            <div style="margin-top:16px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:12px;padding:12px 14px;font-size:13px;color:#065F46">⚡ <strong>Gain:</strong> UI testing starts day 1 • bugs caught in CI • deploy with confidence</div>
+          </div>
+        </div>
+        <div class="fragment" style="margin-top:16px;display:flex;gap:12px;justify-content:center">
+          <span class="pill teal">Pact = what SHOULD happen</span><span class="pill slate">WireMock = what DOES happen</span><span class="pill amber">Postman = quick validation</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5 — Consumer-Driven Flow -->
+    <section class="slide" data-title="Consumer-Driven Flow">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">04 — Contract Testing Deep Dive</div>
+        <h2>Consumer-driven flow — <span class="teal">6 steps</span></h2>
+        <div class="kicker-line"></div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:999px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800">1</span><div><div style="font-weight:800;color:var(--slate);font-size:14px">Consumer writes Pact test</div><div style="font-size:12px;color:var(--slate-3)"><code>given / uponReceiving / willRespondWith</code></div></div></div>
+          <span style="color:var(--teal);font-size:22px">→</span>
+          <div style="flex:1;min-width:220px;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:999px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800">2</span><div><div style="font-weight:800;color:var(--slate);font-size:14px">Pact mock server runs</div><div style="font-size:12px;color:var(--slate-3)">ephemeral • <code>mockServer.url</code></div></div></div>
+          <span style="color:var(--teal);font-size:22px">→</span>
+          <div style="flex:1;min-width:220px;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:999px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800">3</span><div><div style="font-weight:800;color:var(--slate);font-size:14px">Pact file generated</div><div style="font-size:12px;color:var(--slate-3)"><code>pacts/WebApp-UserAPI.json</code></div></div></div>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:999px;background:var(--slate);color:#fff;display:grid;place-items:center;font-weight:800">4</span><div><div style="font-weight:800;color:var(--slate);font-size:14px">Pact file shared</div><div style="font-size:12px;color:var(--slate-3)">local <code>pacts/</code> or Pact Broker</div></div></div>
+          <span style="color:var(--slate);font-size:22px">→</span>
+          <div style="flex:1;min-width:220px;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:999px;background:var(--slate);color:#fff;display:grid;place-items:center;font-weight:800">5</span><div><div style="font-weight:800;color:var(--slate);font-size:14px">Provider verifies</div><div style="font-size:12px;color:var(--slate-3)"><code>Verifier + stateHandlers</code></div></div></div>
+          <span style="color:var(--slate);font-size:22px">→</span>
+          <div style="flex:1;min-width:220px;background:var(--amber);border:1px solid #F59E0B;border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:999px;background:#fff;color:var(--slate);display:grid;place-items:center;font-weight:800">6</span><div><div style="font-weight:800;color:#1E293B;font-size:14px">can-i-deploy gate</div><div style="font-size:12px;color:#92400E">deploy or loop back if fails</div></div></div>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <div class="col card" style="padding:16px">
+            <div style="font-size:12px;letter-spacing:0.12em;font-weight:800;color:var(--teal)">CONSUMER-DRIVEN (PACT)</div>
+            <p style="font-size:13px;margin-top:6px">Consumer is king — you test what <strong>your UI needs</strong>, not what backend thinks you need. Best for SDETs.</p>
+          </div>
+          <div class="col card" style="padding:16px;background:#F8FAFC">
+            <div style="font-size:12px;letter-spacing:0.12em;font-weight:800;color:var(--slate-3)">PROVIDER-DRIVEN (OpenAPI)</div>
+            <p style="font-size:13px;margin-top:6px">Provider publishes OpenAPI → consumer validates via <code>openapi-validator</code>. Best when provider has many consumers.</p>
+          </div>
+          <div class="col card teal" style="padding:16px">
+            <div style="font-size:12px;letter-spacing:0.12em;font-weight:800;color:var(--teal-dark)">THIS KIT = CONSUMER-DRIVEN</div>
+            <p style="font-size:13px;margin-top:6px">Because as SDET you test what your UI needs. Pact Broker is optional — we share via local <code>pacts/</code>.</p>
+          </div>
+        </div>
+        <div class="fragment" style="margin-top:14px;background:var(--slate);color:#E2E8F0;border-radius:14px;padding:14px 18px;display:flex;gap:12px;align-items:center">
+          <span style="width:32px;height:32px;border-radius:10px;background:var(--teal);display:grid;place-items:center">📄</span>
+          <span style="font-size:14px"><strong style="color:#5EEAD4">The pact file IS the contract.</strong> Commit it, share it, version it. Without it, there is no contract testing. <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:6px">metadata.pactSpecification.version: "3.0.0"</code></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6 — Pact Templates Overview -->
+    <section class="slide" data-title="Pact Templates">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">05 — Pact.js Templates</div>
+        <h2>5 ready-to-use templates — <span class="teal">PactV3</span></h2>
+        <div class="kicker-line"></div>
+        <p class="lead" style="max-width:900px">Each template is runnable, explained, copy-paste. <code>PactV3 + MatchersV3</code> (current) — verified against <strong>Pact 17.1.3</strong>, Node 18+.</p>
+        <div style="margin-top:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+          <div class="card" style="border-top:3px solid var(--teal)"><div class="badge teal">01</div><h3 style="font-size:15px;margin-top:10px">GET /users/:id</h3><p style="font-size:12px;margin-top:6px">Path param + <code>like / integer / string</code></p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)"><code>given → uponReceiving → willRespondWith → executeTest</code></div><div style="margin-top:10px" class="pill outline" style="font-size:11px">📄 pacts/WebApp-UserAPI.json</div></div>
+          <div class="card" style="border-top:3px solid var(--teal)"><div class="badge teal">02</div><h3 style="font-size:15px;margin-top:10px">POST /users</h3><p style="font-size:12px;margin-top:6px">Body + <code>regex / eachLike</code></p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)">Catches format drift & array shape</div><div style="margin-top:10px" class="pill outline" style="font-size:11px">201 Created</div></div>
+          <div class="card" style="border-top:3px solid var(--amber)"><div class="badge amber">03</div><h3 style="font-size:15px;margin-top:10px">GET /users?search</h3><p style="font-size:12px;margin-top:6px">Query params + <code>fromProviderState</code></p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)">Search & pagination — real-world</div><div style="margin-top:10px" class="pill outline" style="font-size:11px">eachLike users[]</div></div>
+          <div class="card" style="border-top:3px solid var(--red)"><div class="badge" style="background:#FEE2E2;color:#991B1B">04</div><h3 style="font-size:15px;margin-top:10px">Error Handling</h3><p style="font-size:12px;margin-top:6px">404 / 422 + <code>nullValue / includes</code></p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)">Error contracts = breaking-change detectors</div><div style="margin-top:10px" class="pill outline" style="font-size:11px">2 tests in 1 file</div></div>
+          <div class="card dark" style="border-top:3px solid #5EEAD4"><div class="badge teal">05</div><h3 style="font-size:15px;margin-top:10px;color:#fff">Provider Verification</h3><p style="font-size:12px;margin-top:6px;color:#CBD5E1"><code>Verifier + stateHandlers</code></p><div style="margin-top:10px;font-size:11px;color:#94A3B8">The other half — CI gate</div><div style="margin-top:10px" class="pill teal" style="font-size:11px">✅ Pact Verification Complete!</div></div>
+        </div>
+        <div class="fragment row" style="margin-top:16px">
+          <div class="col card teal" style="display:flex;gap:14px;align-items:center;padding:16px">
+            <span style="width:40px;height:40px;border-radius:12px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800">▶</span>
+            <div><div style="font-weight:800;color:var(--slate);font-size:14px">Run all 5: <code>npm test</code> → 5 PASS + pact file with 10 interactions</div><div style="font-size:12px;color:var(--slate-3)">Then <code>cat pacts/WebApp-UserAPI.json | head -50</code> to inspect the contract artifact</div></div>
+          </div>
+          <div style="min-width:320px" class="card" style="padding:16px">
+            <div style="font-size:12px;font-weight:800;letter-spacing:0.08em;color:var(--slate-3)">MATCHER CHEAT SHEET</div>
+            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"><span class="pill outline" style="font-size:11px"><code>like</code> → type</span><span class="pill outline" style="font-size:11px"><code>regex</code> → format</span><span class="pill outline" style="font-size:11px"><code>eachLike</code> → arrays</span><span class="pill outline" style="font-size:11px"><code>integer/string</code> → primitives</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7 — Pact Template Detail -->
+    <section class="slide" data-title="Template Detail">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#0F172A 0%, #1E293B 100%);"></div>
+      <div class="vignette" style="background:radial-gradient(900px 500px at 20% 20%, rgba(14,154,139,0.18), transparent 60%)"></div>
+      <div class="slide-inner">
+        <div class="eyebrow" style="color:#5EEAD4">05 — Template Detail</div>
+        <h2 style="color:#fff">Template 01 — <span style="color:#5EEAD4">GET /users/:id</span> with matchers</h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:12px">
+          <div class="col" style="flex:1.2">
+            <div class="code" style="font-size:12px;line-height:1.65"> <span class="c">// PactV3 — consumer-driven contract (see D2 lifecycle)</span>
+<span class="k">import</span> { <span class="n">PactV3</span>, <span class="n">MatchersV3</span> } <span class="k">from</span> <span class="s">'@pact-foundation/pact'</span>;
+<span class="k">const</span> { <span class="n">like</span>, <span class="n">integer</span>, <span class="n">string</span>, <span class="n">regex</span> } = MatchersV3;
+
+<span class="k">const</span> provider = <span class="k">new</span> <span class="n">PactV3</span>({
+  <span class="n">dir</span>: <span class="s">'pacts'</span>, <span class="n">consumer</span>: <span class="s">'WebApp'</span>, <span class="n">provider</span>: <span class="s">'UserAPI'</span>
+});
+
+provider
+  .<span class="n">given</span>(<span class="s">'user with id 1 exists'</span>) <span class="c">// provider state — seed DB</span>
+  .<span class="n">uponReceiving</span>(<span class="s">'a request for user 1'</span>)
+  .<span class="n">withRequest</span>({ <span class="n">method</span>: <span class="s">'GET'</span>, <span class="n">path</span>: <span class="s">'/users/1'</span> })
+  .<span class="n">willRespondWith</span>({
+    <span class="n">status</span>: <span class="s">200</span>,
+    <span class="n">body</span>: {
+      <span class="n">id</span>: <span class="n">integer</span>(<span class="s">1</span>), <span class="c">// any number passes — catches type drift</span>
+      <span class="n">name</span>: <span class="n">string</span>(<span class="s">'Alice'</span>),
+      <span class="n">email</span>: <span class="n">regex</span>(<span class="s">'^[^@]+@[^@]+\\.[^@]+$'</span>, <span class="s">'alice@example.com'</span>),
+      <span class="n">active</span>: <span class="n">boolean</span>(<span class="s">true</span>)
+    }
+  });
+
+<span class="k">await</span> provider.<span class="n">executeTest</span>(<span class="k">async</span> mockServer =&gt; {
+  <span class="k">const</span> res = <span class="k">await</span> <span class="n">fetch</span>(<span class="s">`${mockServer.url}/users/1`</span>);
+  <span class="n">expect</span>(res.status).<span class="n">toBe</span>(<span class="s">200</span>);
+});</div>
+          </div>
+          <div class="col" style="flex:0.9;display:flex;flex-direction:column;gap:14px">
+            <div class="card" style="background:rgba(255,255,255,0.96)">
+              <div class="badge teal">MATCHERS — WHY THEY MATTER</div>
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px;align-items:flex-start"><span class="pill teal" style="font-size:11px;white-space:nowrap">integer(1)</span><span style="font-size:13px;color:var(--slate-2)">Any number passes — catches <strong>string → number</strong> drift</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start"><span class="pill teal" style="font-size:11px;white-space:nowrap">regex(...)</span><span style="font-size:13px;color:var(--slate-2)">Enforces format — <code>like('a@b.com')</code> would pass <code>not-an-email</code></span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start"><span class="pill amber" style="font-size:11px;white-space:nowrap">eachLike</span><span style="font-size:13px;color:var(--slate-2)">Array shape — catches missing/extra items</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start"><span class="pill slate" style="font-size:11px;white-space:nowrap">given</span><span style="font-size:13px;color:var(--slate-2)">Provider state — tells Verifier to seed data</span></div>
+              </div>
+            </div>
+            <div class="card" style="background:rgba(255,255,255,0.96)">
+              <div style="font-size:12px;font-weight:800;letter-spacing:0.08em;color:var(--slate-3)">WHAT YOU SHOULD SEE</div>
+              <div class="code" style="margin-top:10px;font-size:11px;padding:12px;background:#F8FAFC;color:var(--slate);border-color:#E2E8F0"> PASS  01-consumer-get-user.test.js
+  ✓ returns user by id (45 ms)
+
+ Pact file: pacts/WebApp-UserAPI.json
+  → 1 interaction • spec 3.0.0</div>
+              <div style="margin-top:10px;display:flex;gap:8px"><span class="pill outline" style="font-size:11px">What if fails?</span><span style="font-size:12px;color:var(--slate-3)">Check <code>dir</code> exists → <code>mkdir -p pacts</code></span></div>
+            </div>
+            <div class="fragment card teal" style="padding:14px">
+              <div style="font-size:13px;color:var(--slate)"><strong>Rule of thumb:</strong> <code>like</code> for shape, <code>regex</code> for format, <code>eachLike</code> for lists. Start loose, tighten where format matters.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8 — WireMock Setup Options -->
+    <section class="slide" data-title="WireMock Setup">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">06 — WireMock Setup</div>
+        <h2>3 ways to spin WireMock — <span class="teal">pick one</span></h2>
+        <div class="kicker-line"></div>
+        <p class="lead" style="max-width:900px">All 3 produce the same mock server at <code>http://localhost:8080</code> — mappings are identical. Have Docker? Use Docker (no Java). No Docker? Use JAR.</p>
+        <div class="row" style="margin-top:16px">
+          <div class="card" style="flex:1;border-top:3px solid var(--slate)">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span class="badge slate">01 • JAR</span><span style="font-size:11px;color:var(--slate-3)">Needs Java 11+</span></div>
+            <h3 style="margin-top:12px;font-size:16px">Standalone JAR</h3>
+            <div class="code" style="margin-top:10px;font-size:11px;padding:12px">java -jar wiremock-standalone-3.13.2.jar \
+  --port 8080 \
+  --global-response-templating \
+  --enable-stub-cors --verbose</div>
+            <div style="margin-top:10px;font-size:12px;color:var(--slate-3)">Best for: SDETs without Docker • Direct Java run</div>
+            <div style="margin-top:8px;display:flex;gap:6px"><span class="pill outline" style="font-size:11px">adoptium.net</span><span class="pill outline" style="font-size:11px">--root-dir ./wiremock</span></div>
+          </div>
+          <div class="card teal" style="flex:1;border-top:3px solid var(--teal)">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span class="badge teal">02 • DOCKER</span><span style="font-size:11px;color:var(--teal-dark);font-weight:700">No Java needed ✓</span></div>
+            <h3 style="margin-top:12px;font-size:16px">Docker Run</h3>
+            <div class="code" style="margin-top:10px;font-size:11px;padding:12px">docker run -it --rm -p 8080:8080 \
+  -v $PWD/wiremock:/home/wiremock \
+  wiremock/wiremock:3.13.2 \
+  --global-response-templating --enable-stub-cors</div>
+            <div style="margin-top:10px;font-size:12px;color:var(--slate-3)">Best for: modern SDETs • reproducible</div>
+            <div style="margin-top:8px;display:flex;gap:6px"><span class="pill teal" style="font-size:11px">Recommended</span><span class="pill outline" style="font-size:11px">WIREMOCK_OPTIONS</span></div>
+          </div>
+          <div class="card" style="flex:1;border-top:3px solid var(--amber)">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span class="badge amber">03 • COMPOSE</span><span style="font-size:11px;color:#92400E;font-weight:700">Team share</span></div>
+            <h3 style="margin-top:12px;font-size:16px">Docker Compose</h3>
+            <div class="code" style="margin-top:10px;font-size:11px;padding:12px">services:
+  wiremock:
+    image: "wiremock/wiremock:3.13.2"
+    ports: ["8080:8080"]
+    volumes: ["./mappings:/home/wiremock/mappings"]</div>
+            <div style="margin-top:10px;font-size:12px;color:var(--slate-3)">Best for: team sharing • <code>docker-compose up</code></div>
+            <div style="margin-top:8px;display:flex;gap:6px"><span class="pill amber" style="font-size:11px">One command</span><span class="pill outline" style="font-size:11px">entrypoint flags</span></div>
+          </div>
+        </div>
+        <div class="fragment card" style="margin-top:16px;display:flex;gap:16px;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:10px;background:var(--teal-light);display:grid;place-items:center">✓</span><span style="font-size:14px;color:var(--slate)"><strong>Verify:</strong> <code>curl http://localhost:8080/__admin/mappings</code> → <code>{"mappings": [...]}</code> • “WireMock started on port 8080”</span></div>
+          <span class="pill slate">Port conflict? → --port 9999 + update {{baseUrl}}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9 — WireMock Mappings -->
+    <section class="slide" data-title="WireMock Mappings">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">06 — WireMock Mappings</div>
+        <h2>Mappings — the stubs that <span class="teal">return mock data</span></h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:12px">
+          <div class="col" style="flex:1.1">
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="background:var(--slate);color:#E2E8F0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;letter-spacing:0.12em;font-weight:800">mappings/get-user.json</span><span class="pill teal" style="font-size:11px">GET /users/1 → 200</span></div>
+              <div class="code" style="border:none;border-radius:0;font-size:11px">{
+  <span class="n">"request"</span>: {
+    <span class="n">"method"</span>: <span class="s">"GET"</span>,
+    <span class="n">"url"</span>: <span class="s">"/users/1"</span>,
+    <span class="n">"headers"</span>: { <span class="n">"Accept"</span>: { <span class="n">"equalTo"</span>: <span class="s">"application/json"</span> } }
+  },
+  <span class="n">"response"</span>: {
+    <span class="n">"status"</span>: <span class="s">200</span>,
+    <span class="n">"headers"</span>: {
+      <span class="n">"Content-Type"</span>: <span class="s">"application/json"</span>,
+      <span class="n">"Access-Control-Allow-Origin"</span>: <span class="s">"*"</span> <span class="c">// CORS for UI</span>
+    },
+    <span class="n">"jsonBody"</span>: { <span class="n">"id"</span>: <span class="s">1</span>, <span class="n">"name"</span>: <span class="s">"Alice"</span>, <span class="n">"email"</span>: <span class="s">"alice@example.com"</span> }
+  }
+}</div>
+            </div>
+            <div class="row" style="margin-top:12px;gap:12px">
+              <div class="card" style="flex:1;padding:14px"><div style="font-size:11px;letter-spacing:0.1em;font-weight:800;color:var(--slate-3)">CREATE</div><div style="font-size:12px;margin-top:6px"><code>POST /users</code> + <code>bodyPatterns</code> → <code>201</code></div></div>
+              <div class="card" style="flex:1;padding:14px"><div style="font-size:11px;letter-spacing:0.1em;font-weight:800;color:var(--slate-3)">SEARCH</div><div style="font-size:12px;margin-top:6px"><code>GET /users?search=alice</code> + <code>queryParameters</code> → <code>200</code></div></div>
+            </div>
+          </div>
+          <div class="col" style="flex:0.9;display:flex;flex-direction:column;gap:14px">
+            <div class="card teal">
+              <div style="font-size:12px;letter-spacing:0.1em;font-weight:800;color:var(--teal-dark)">REQUEST MATCHING PIPELINE</div>
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:12px">1</span><span style="font-size:13px"><code>method</code> + <code>url / urlPattern</code></span><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">equalTo / urlPattern</span></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:12px">2</span><span style="font-size:13px"><code>headers</code> + <code>queryParameters</code></span><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">matching</span></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:12px">3</span><span style="font-size:13px"><code>bodyPatterns</code></span><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">equalToJson</span></div>
+                <div style="height:1px;background:#CCFBF1;margin:4px 0"></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:var(--amber);color:#1E293B;display:grid;place-items:center;font-size:12px">→</span><span style="font-size:13px"><code>status + jsonBody / bodyFileName</code> + <code>transformers</code></span></div>
+              </div>
+            </div>
+            <div class="card dark" style="padding:16px">
+              <div style="font-size:12px;letter-spacing:0.1em;font-weight:800;color:#5EEAD4">DYNAMIC MOCKS — TEMPLATING</div>
+              <div class="code" style="margin-top:10px;font-size:11px;padding:12px">{
+  <span class="n">"response"</span>: {
+    <span class="n">"body"</span>: <span class="s">"{ \"id\": \"{{request.pathSegments.[1]}}\" }"</span>,
+    <span class="n">"transformers"</span>: [<span class="s">"response-template"</span>]
+  }
+}
+<span class="c">// {{now}} {{randomValue}} {{jsonPath}} — needs --global-response-templating</span></div>
+            </div>
+            <div class="fragment card" style="padding:14px;display:flex;gap:10px;align-items:center">
+              <span style="width:32px;height:32px;border-radius:10px;background:var(--teal-light);display:grid;place-items:center">✓</span>
+              <span style="font-size:13px"><code>curl http://localhost:8080/users/1</code> → <code>200 + JSON</code> • Admin: <code>GET /__admin/mappings</code> shows 3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 10 — Postman -->
+    <section class="slide" data-title="Postman">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">07 — Postman Collection</div>
+        <h2>Validate mocks — <span class="teal">pm.test</span> in Postman</h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:12px">
+          <div class="col" style="flex:0.9">
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="background:var(--slate);color:#E2E8F0;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;letter-spacing:0.1em;font-weight:800">Contract_Mock_Validation.postman_collection.json</span><span class="pill amber" style="font-size:11px">v2.1</span></div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:var(--teal-light);display:grid;place-items:center;font-size:14px">📁</span><div><div style="font-weight:700;font-size:13px">Health</div><div style="font-size:12px;color:var(--slate-3)">GET {{baseUrl}}/health → 200</div></div><span style="margin-left:auto" class="badge teal">1 req</span></div>
+                <div style="height:1px;background:#F1F5F9"></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:14px">📁</span><div><div style="font-weight:700;font-size:13px">Users</div><div style="font-size:12px;color:var(--slate-3)">GET /users/1 • POST /users • GET /users?search=alice</div></div><span style="margin-left:auto" class="badge teal">3 req</span></div>
+                <div style="height:1px;background:#F1F5F9"></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:#FEE2E2;display:grid;place-items:center;font-size:14px">📁</span><div><div style="font-weight:700;font-size:13px">Error Cases</div><div style="font-size:12px;color:var(--slate-3)">GET /users/999 → 404 • POST invalid → 422</div></div><span style="margin-left:auto" class="badge" style="background:#FEE2E2;color:#991B1B">2 req</span></div>
+              </div>
+              <div style="background:#F8FAFC;border-top:1px solid #E2E8F0;padding:12px 16px;display:flex;gap:8px;align-items:center"><span style="font-size:12px;font-weight:700;color:var(--slate)">Variable:</span><code style="background:#fff;border:1px solid #E2E8F0;padding:4px 8px;border-radius:8px;font-size:12px">baseUrl = http://localhost:8080</code><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">Collection → Variables</span></div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px"><span class="pill outline" style="font-size:11px">Import: File → Import → Upload JSON</span><span class="pill outline" style="font-size:11px">Schema: schema.getpostman.com/v2.1.0</span></div>
+          </div>
+          <div class="col" style="flex:1.1;display:flex;flex-direction:column;gap:14px">
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="background:#0F172A;color:#E2E8F0;padding:10px 16px;font-size:12px;letter-spacing:0.08em;font-weight:800">pm.test — Post-response (Chai BDD)</div>
+              <div class="code" style="border:none;border-radius:0;font-size:11px"> <span class="n">pm</span>.<span class="n">test</span>(<span class="s">"Status is 200"</span>, () =&gt; {
+  <span class="n">pm</span>.response.<span class="n">to</span>.<span class="n">have</span>.<span class="n">status</span>(<span class="s">200</span>);
+});
+<span class="n">pm</span>.<span class="n">test</span>(<span class="s">"Body has correct fields"</span>, () =&gt; {
+  <span class="k">const</span> j = <span class="n">pm</span>.response.<span class="n">json</span>();
+  <span class="n">pm</span>.<span class="n">expect</span>(j.id).<span class="n">to</span>.<span class="n">be</span>.<span class="n">a</span>(<span class="s">'number'</span>);
+  <span class="n">pm</span>.<span class="n">expect</span>(j.name).<span class="n">to</span>.<span class="n">eql</span>(<span class="s">'Alice'</span>);
+});
+<span class="n">pm</span>.<span class="n">test</span>(<span class="s">"Response time &lt;500ms"</span>, () =&gt; {
+  <span class="n">pm</span>.<span class="n">expect</span>(<span class="n">pm</span>.response.responseTime).<span class="n">to</span>.<span class="n">be</span>.<span class="n">below</span>(<span class="s">500</span>);
+});
+<span class="c">// Chaining — save for next request</span>
+<span class="n">pm</span>.collectionVariables.<span class="n">set</span>(<span class="s">"userId"</span>, <span class="n">pm</span>.response.<span class="n">json</span>().id);</div>
+            </div>
+            <div class="fragment card teal" style="padding:14px;display:flex;gap:10px;align-items:center">
+              <span style="width:32px;height:32px;border-radius:10px;background:var(--teal);color:#fff;display:grid;place-items:center">▶</span>
+              <span style="font-size:13px"><strong>Run:</strong> Click request → <strong>Send</strong> → Tests tab → all green. Collection-level event checks <code>response time + content-type</code> for every request.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11 — HERO UI Against Mock -->
+    <section class="slide" data-title="HERO — UI Against Mock">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#0F172A 0%, #1E293B 100%);"></div>
+      <div class="vignette" style="background:radial-gradient(1000px 600px at 20% 20%, rgba(14,154,139,0.20), transparent 60%), radial-gradient(800px 500px at 90% 80%, rgba(245,158,11,0.12), transparent 60%)"></div>
+      <div class="slide-inner">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="eyebrow" style="color:#5EEAD4">08 — HERO WORKFLOW</div>
+          <div class="pill amber">⭐ Most differentiated value</div>
+        </div>
+        <h2 style="color:#fff">UI against mock — <span style="color:#5EEAD4">10-step</span> exact setup</h2>
+        <div class="kicker-line"></div>
+        <p style="color:#CBD5E1;max-width:900px;font-size:16px">Test UI while backend is still being built. No code change — just config. This workflow alone saves weeks.</p>
+        <div style="margin-top:14px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px">1</div><div style="font-weight:800;font-size:12px;margin-top:8px">Write Pact consumer test</div><div style="font-size:11px;color:var(--slate-3)">Ch 3 • <code>given / uponReceiving</code></div></div>
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px">2</div><div style="font-weight:800;font-size:12px;margin-top:8px">Generate pact JSON</div><div style="font-size:11px;color:var(--slate-3)"><code>pacts/*.json</code></div></div>
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px">3</div><div style="font-weight:800;font-size:12px;margin-top:8px">Create WireMock mappings</div><div style="font-size:11px;color:var(--slate-3)">from pact or hand-write</div></div>
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--amber);color:#1E293B;display:grid;place-items:center;font-weight:800;font-size:12px">4</div><div style="font-weight:800;font-size:12px;margin-top:8px">Start WireMock</div><div style="font-size:11px;color:var(--slate-3)"><code>docker run ... --enable-stub-cors</code></div></div>
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--amber);color:#1E293B;display:grid;place-items:center;font-weight:800;font-size:12px">5</div><div style="font-weight:800;font-size:12px;margin-top:8px">Set UI env var</div><div style="font-size:11px;color:var(--slate-3)"><code>VITE_API_URL=http://localhost:8080</code></div></div>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--slate);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px">6</div><div style="font-weight:800;font-size:12px;margin-top:8px">Run UI</div><div style="font-size:11px;color:var(--slate-3)"><code>npm run dev</code> → :5173</div></div>
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--slate);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px">7</div><div style="font-weight:800;font-size:12px;margin-top:8px">UI → WireMock</div><div style="font-size:11px;color:var(--slate-3)"><code>fetch(VITE_API_URL + "/users/1")</code></div></div>
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--slate);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px">8</div><div style="font-weight:800;font-size:12px;margin-top:8px">Playwright E2E</div><div style="font-size:11px;color:var(--slate-3)"><code>npx playwright test</code> → PASS</div></div>
+          <div class="card" style="background:rgba(255,255,255,0.96);padding:14px"><div style="width:28px;height:28px;border-radius:999px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px">9</div><div style="font-weight:800;font-size:12px;margin-top:8px">Verify requests</div><div style="font-size:11px;color:var(--slate-3)"><code>GET /__admin/requests</code></div></div>
+          <div class="card" style="background:var(--teal);color:#fff;padding:14px;border-color:var(--teal)"><div style="width:28px;height:28px;border-radius:999px;background:#fff;color:var(--teal);display:grid;place-items:center;font-weight:800;font-size:12px">10</div><div style="font-weight:800;font-size:12px;margin-top:8px;color:#fff">Real API ready → Verifier</div><div style="font-size:11px;color:#CCFBF1">Switch env → <code>can-i-deploy</code></div></div>
+        </div>
+        <div class="fragment row" style="margin-top:14px;gap:12px">
+          <div style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;color:#E2E8F0;font-size:13px">
+            <span style="width:32px;height:32px;border-radius:10px;background:var(--red);display:grid;place-items:center">⚠️</span>
+            <span><strong style="color:#FECACA">CORS:</strong> WireMock must send <code style="background:rgba(255,255,255,0.12);padding:2px 6px;border-radius:6px">Access-Control-Allow-Origin: *</code> — via <code>--enable-stub-cors</code> or mapping header</span>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;color:#E2E8F0;font-size:13px">
+            <span style="width:32px;height:32px;border-radius:10px;background:var(--amber);display:grid;place-items:center">🔀</span>
+            <span><strong style="color:#FDE68A">Proxy fallback:</strong> unmatched → <code style="background:rgba(255,255,255,0.12);padding:2px 6px;border-radius:6px">proxyBaseUrl: "https://real-api.example.com"</code></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 12 — Breaking-Change Checklist -->
+    <section class="slide" data-title="Checklist">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">09 — Breaking-Change Checklist</div>
+        <h2>14 categories — <span class="teal">catch schema drift early</span></h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:12px">
+          <div class="col" style="flex:1.2">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="card" style="padding:14px;border-left:4px solid var(--red)"><div style="display:flex;justify-content:space-between"><span style="font-weight:800;font-size:13px">Field removal</span><span style="background:#FEE2E2;color:#991B1B;font-size:10px;padding:4px 8px;border-radius:999px;font-weight:800">🔴 BREAKING</span></div><div style="font-size:11px;color:var(--slate-3);margin-top:6px">Provider stops returning <code>email</code> consumer expects</div><div style="font-size:11px;color:var(--teal);margin-top:6px">Caught by: <code>like / string</code> fails</div></div>
+              <div class="card" style="padding:14px;border-left:4px solid var(--red)"><div style="display:flex;justify-content:space-between"><span style="font-weight:800;font-size:13px">Type change</span><span style="background:#FEE2E2;color:#991B1B;font-size:10px;padding:4px 8px;border-radius:999px;font-weight:800">🔴 BREAKING</span></div><div style="font-size:11px;color:var(--slate-3);margin-top:6px"><code>string → number</code> for <code>id</code></div><div style="font-size:11px;color:var(--teal);margin-top:6px">Caught by: <code>integer / string</code></div></div>
+              <div class="card" style="padding:14px;border-left:4px solid var(--red)"><div style="display:flex;justify-content:space-between"><span style="font-weight:800;font-size:13px">Required field added</span><span style="background:#FEE2E2;color:#991B1B;font-size:10px;padding:4px 8px;border-radius:999px;font-weight:800">🔴 BREAKING</span></div><div style="font-size:11px;color:var(--slate-3);margin-top:6px">New required field without default</div><div style="font-size:11px;color:var(--teal);margin-top:6px">Caught by: consumer test fails</div></div>
+              <div class="card" style="padding:14px;border-left:4px solid var(--red)"><div style="display:flex;justify-content:space-between"><span style="font-weight:800;font-size:13px">Enum narrowing</span><span style="background:#FEE2E2;color:#991B1B;font-size:10px;padding:4px 8px;border-radius:999px;font-weight:800">🔴 BREAKING</span></div><div style="font-size:11px;color:var(--slate-3);margin-top:6px">Remove value from allowed enum</div><div style="font-size:11px;color:var(--teal);margin-top:6px">Caught by: <code>regex</code></div></div>
+              <div class="card" style="padding:14px;border-left:4px solid var(--yellow)"><div style="display:flex;justify-content:space-between"><span style="font-weight:800;font-size:13px">Status code change</span><span style="background:#FEF3C7;color:#92400E;font-size:10px;padding:4px 8px;border-radius:999px;font-weight:800">🟡 IF CHECKED</span></div><div style="font-size:11px;color:var(--slate-3);margin-top:6px"><code>200 → 204</code> or <code>404 → 200</code></div><div style="font-size:11px;color:var(--teal);margin-top:6px">Caught by: <code>willRespondWith status</code></div></div>
+              <div class="card" style="padding:14px;border-left:4px solid var(--yellow)"><div style="display:flex;justify-content:space-between"><span style="font-weight:800;font-size:13px">Header removal</span><span style="background:#FEF3C7;color:#92400E;font-size:10px;padding:4px 8px;border-radius:999px;font-weight:800">🟡 IF CHECKED</span></div><div style="font-size:11px;color:var(--slate-3);margin-top:6px">Remove <code>Content-Type</code> or auth header</div><div style="font-size:11px;color:var(--teal);margin-top:6px">Caught by: header matcher</div></div>
+              <div class="card" style="padding:14px;border-left:4px solid var(--green)"><div style="display:flex;justify-content:space-between"><span style="font-weight:800;font-size:13px">Optional field added</span><span style="background:#ECFDF5;color:#065F46;font-size:10px;padding:4px 8px;border-radius:999px;font-weight:800">🟢 SAFE</span></div><div style="font-size:11px;color:var(--slate-3);margin-top:6px">New optional field — no contract affected</div><div style="font-size:11px;color:var(--teal);margin-top:6px">No failure — non-breaking</div></div>
+              <div class="card" style="padding:14px;border-left:4px solid var(--green)"><div style="display:flex;justify-content:space-between"><span style="font-weight:800;font-size:13px">New endpoint</span><span style="background:#ECFDF5;color:#065F46;font-size:10px;padding:4px 8px;border-radius:999px;font-weight:800">🟢 SAFE</span></div><div style="font-size:11px;color:var(--slate-3);margin-top:6px">Add <code>GET /users/:id/posts</code></div><div style="font-size:11px;color:var(--teal);margin-top:6px">No existing contract broken</div></div>
+            </div>
+            <div style="margin-top:10px;text-align:center;font-size:11px;color:var(--slate-3)">+ 6 more: URL/path change • query param • auth scheme • pagination • error format • content-type → full checklist in PDF p30–33</div>
+          </div>
+          <div class="col" style="flex:0.7;display:flex;flex-direction:column;gap:14px">
+            <div class="card dark" style="padding:18px">
+              <div style="font-size:12px;letter-spacing:0.12em;font-weight:800;color:#5EEAD4">SEVERITY LEGEND</div>
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:14px;height:14px;background:var(--red);border-radius:50%"></span><span style="font-size:13px;color:#fff"><strong>🔴 Breaking</strong> — blocks deploy, Verifier fails</span></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:14px;height:14px;background:var(--yellow);border-radius:50%"></span><span style="font-size:13px;color:#fff"><strong>🟡 Breaking if checked</strong> — fails only if consumer asserts</span></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:14px;height:14px;background:var(--green);border-radius:50%"></span><span style="font-size:13px;color:#fff"><strong>🟢 Non-breaking</strong> — safe, no contract affected</span></div>
+              </div>
+              <div style="margin-top:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px">
+                <div style="font-size:12px;font-weight:800;color:#FDE68A">When to run?</div>
+                <div style="font-size:12px;color:#CBD5E1;margin-top:6px">Before merging API PR • Before deploying provider • In CI via <code>can-i-deploy</code> • When adding new endpoint</div>
+              </div>
+            </div>
+            <div class="card teal" style="padding:16px;text-align:center">
+              <div style="font-size:13px;font-weight:800;color:var(--slate)">📌 Print & pin</div>
+              <div style="font-size:12px;color:var(--slate-3);margin-top:6px">One-page quick-ref (PDF p33) — pin next to your desk. Run through it for every API change.</div>
+              <div style="margin-top:10px" class="pill teal">companion_files/checklists/api-breaking-change-checklist.md</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 13 — Severity Matrix -->
+    <section class="slide" data-title="Severity Matrix">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">09 — Severity Matrix</div>
+        <h2>Decision tree — <span class="teal">is this breaking?</span></h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:12px">
+          <div class="col" style="flex:1.1">
+            <div class="card" style="padding:18px">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:32px;height:32px;border-radius:10px;background:var(--slate);color:#fff;display:grid;place-items:center;font-size:14px">?</span><span style="font-weight:800;color:var(--slate)">Did you change the API?</span><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">Start here</span></div>
+                <div style="margin-left:16px;border-left:2px dashed #E2E8F0;padding-left:16px;display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;gap:8px;align-items:center"><span style="background:#FEE2E2;color:#991B1B;font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800">🔴</span><span style="font-size:13px">Remove / rename a field? → <strong>Breaking</strong></span><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">fix: keep old field, version API</span></div>
+                  <div style="display:flex;gap:8px;align-items:center"><span style="background:#FEE2E2;color:#991B1B;font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800">🔴</span><span style="font-size:13px">Add required field? → <strong>Breaking</strong></span><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">fix: make optional + default</span></div>
+                  <div style="display:flex;gap:8px;align-items:center"><span style="background:#FEE2E2;color:#991B1B;font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800">🔴</span><span style="font-size:13px">Change type / enum? → <strong>Breaking</strong></span><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">fix: new field, deprecate old</span></div>
+                  <div style="display:flex;gap:8px;align-items:center"><span style="background:#FEF3C7;color:#92400E;font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800">🟡</span><span style="font-size:13px">Change status code / header? → <strong>Breaking if checked</strong></span></div>
+                  <div style="display:flex;gap:8px;align-items:center"><span style="background:#ECFDF5;color:#065F46;font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800">🟢</span><span style="font-size:13px">Add optional field / endpoint? → <strong>Non-breaking</strong></span><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">safe ✓</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="fragment card teal" style="margin-top:12px;padding:14px;display:flex;gap:10px;align-items:center">
+              <span style="width:32px;height:32px;border-radius:10px;background:var(--teal);color:#fff;display:grid;place-items:center">💡</span>
+              <span style="font-size:13px"><strong>Detection:</strong> each leaf has a Pact matcher that catches it — <code>like</code> for type, <code>regex</code> for format, <code>willRespondWith status</code> for codes. See PDF T7.</span>
+            </div>
+          </div>
+          <div class="col" style="flex:0.9">
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="background:var(--teal);color:#fff;padding:10px 16px;font-size:12px;letter-spacing:0.08em;font-weight:800">T7 — SEVERITY MATRIX (14 rows)</div>
+              <table class="tbl" style="border:none;border-radius:0">
+                <thead><tr><th style="width:28%">Change</th><th style="width:18%">Severity</th><th>Matcher</th><th>Fix</th></tr></thead>
+                <tbody>
+                  <tr><td style="font-size:12px">Field removal</td><td><span style="background:#FEE2E2;color:#991B1B;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800">🔴</span></td><td style="font-size:11px"><code>like</code></td><td style="font-size:11px">Keep field, version</td></tr>
+                  <tr><td style="font-size:12px">Type change</td><td><span style="background:#FEE2E2;color:#991B1B;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800">🔴</span></td><td style="font-size:11px"><code>integer/string</code></td><td style="font-size:11px">New field</td></tr>
+                  <tr><td style="font-size:12px">Status code</td><td><span style="background:#FEF3C7;color:#92400E;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800">🟡</span></td><td style="font-size:11px"><code>status</code></td><td style="font-size:11px">Keep old code</td></tr>
+                  <tr><td style="font-size:12px">Optional add</td><td><span style="background:#ECFDF5;color:#065F46;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800">🟢</span></td><td style="font-size:11px">—</td><td style="font-size:11px">Safe</td></tr>
+                  <tr><td style="font-size:12px">Error format</td><td><span style="background:#FEE2E2;color:#991B1B;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800">🔴</span></td><td style="font-size:11px"><code>includes</code></td><td style="font-size:11px">Version error</td></tr>
+                </tbody>
+              </table>
+              <div style="padding:10px 16px;background:#F8FAFC;font-size:11px;color:var(--slate-3);text-align:center">Full 14-row matrix in PDF p30 • Printable quick-ref p33</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 14 — Demo App -->
+    <section class="slide" data-title="Demo App">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">10 — Demo App</div>
+        <h2>Runnable provider — <span class="teal">Express</span> at :3000</h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:12px">
+          <div class="col" style="flex:1">
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="background:var(--slate);color:#E2E8F0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;letter-spacing:0.08em;font-weight:800">ENDPOINTS — 5 seed users • CORS enabled</span><span class="pill teal" style="font-size:11px">contract-mock-demo-app/</span></div>
+              <table class="tbl" style="border:none;border-radius:0">
+                <thead><tr><th>Method</th><th>Path</th><th>Status</th><th>Used By</th></tr></thead>
+                <tbody>
+                  <tr><td><code>GET</code></td><td><code>/users/:id</code></td><td>200 / 404</td><td>Template 01</td></tr>
+                  <tr><td><code>POST</code></td><td><code>/users</code></td><td>201 / 422</td><td>Template 02</td></tr>
+                  <tr><td><code>GET</code></td><td><code>/users?search=&page=</code></td><td>200</td><td>Template 03</td></tr>
+                  <tr><td><code>GET</code></td><td><code>/health</code></td><td>200</td><td>Postman</td></tr>
+                  <tr><td><code>GET</code></td><td><code>/users/999</code></td><td>404</td><td>Template 04</td></tr>
+                </tbody>
+              </table>
+              <div style="padding:12px 16px;background:#F8FAFC;display:flex;gap:8px;align-items:center"><span style="font-size:12px;font-weight:700">Port via env:</span><code style="background:#fff;border:1px solid #E2E8F0;padding:4px 8px;border-radius:8px;font-size:12px">PORT=3000</code><span style="margin-left:auto;font-size:11px;color:var(--slate-3)">.env.example included</span></div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:10px">
+              <div class="card teal" style="flex:1;padding:14px"><div style="font-size:11px;letter-spacing:0.08em;font-weight:800;color:var(--teal-dark)">STACK</div><div style="font-size:12px;margin-top:6px">Express 4 • Pact 17.1.3 • Jest 29 • Axios • Free/OSS</div></div>
+              <div class="card" style="flex:1;padding:14px"><div style="font-size:11px;letter-spacing:0.08em;font-weight:800;color:var(--slate-3)">SEED DATA</div><div style="font-size:12px;margin-top:6px">5 users • <code>data/users.json</code> • CORS • <code>server.js</code> one file</div></div>
+            </div>
+          </div>
+          <div class="col" style="flex:0.9;display:flex;flex-direction:column;gap:14px">
+            <div class="card dark" style="padding:16px">
+              <div style="font-size:12px;letter-spacing:0.08em;font-weight:800;color:#5EEAD4">ARCHITECTURE</div>
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center">▶</span><span style="font-size:13px;color:#E2E8F0"><code>Pact tests</code> → <code>pacts/*.json</code></span></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:var(--amber);color:#1E293B;display:grid;place-items:center">🧱</span><span style="font-size:13px;color:#E2E8F0"><code>WireMock :8080</code> ←→ <code>Express :3000</code></span></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:8px;background:#334155;color:#fff;display:grid;place-items:center">✓</span><span style="font-size:13px;color:#E2E8F0"><code>Verifier</code> checks provider • <code>can-i-deploy</code></span></div>
+              </div>
+              <div style="margin-top:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:10px 12px;font-size:12px;color:#CBD5E1">Every endpoint in templates exists in demo — verified <code>200 / 404 / 422</code> via fetch.</div>
+            </div>
+            <div class="card" style="padding:14px">
+              <div style="font-size:12px;font-weight:800;letter-spacing:0.08em;color:var(--slate-3)">TRY IT — 2 TERMINALS</div>
+              <div class="code" style="margin-top:10px;font-size:11px;padding:12px;background:#F8FAFC;color:var(--slate);border-color:#E2E8F0">Terminal 1:  npm start
+  → [contract-mock-demo-app] Server at http://localhost:3000
+
+Terminal 2:  npm test
+  → 5 PASS • Pact Verification Complete!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 15 — Practice Lab -->
+    <section class="slide" data-title="Practice Lab">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">11 — Practice Lab</div>
+        <h2>5 exercises — <span class="teal">break it, then fix it</span></h2>
+        <div class="kicker-line"></div>
+        <p class="lead" style="max-width:900px">Each exercise breaks one contract and you fix it. Helpers + data-factory included — copy them to your project.</p>
+        <div style="margin-top:14px;display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+          <div class="card" style="border-top:3px solid var(--red)"><div class="badge" style="background:#FEE2E2;color:#991B1B">01</div><h3 style="font-size:14px;margin-top:10px">Break: field removal</h3><p style="font-size:12px;margin-top:6px">Remove <code>email</code> → Pact fails → fix by keeping field</p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)">Checklist: field removal 🔴</div></div>
+          <div class="card" style="border-top:3px solid var(--red)"><div class="badge" style="background:#FEE2E2;color:#991B1B">02</div><h3 style="font-size:14px;margin-top:10px">Break: type change</h3><p style="font-size:12px;margin-top:6px"><code>string → number</code> → <code>integer</code> fails</p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)">Checklist: type change 🔴</div></div>
+          <div class="card" style="border-top:3px solid var(--red)"><div class="badge" style="background:#FEE2E2;color:#991B1B">03</div><h3 style="font-size:14px;margin-top:10px">Add required field</h3><p style="font-size:12px;margin-top:6px">New required field → consumer fails</p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)">Checklist: required add 🔴</div></div>
+          <div class="card" style="border-top:3px solid var(--amber)"><div class="badge amber">04</div><h3 style="font-size:14px;margin-top:10px">WireMock templating</h3><p style="font-size:12px;margin-top:6px">Handlebars <code>{{now}} {{request.path}}</code></p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)">Needs <code>response-template</code></div></div>
+          <div class="card teal" style="border-top:3px solid var(--teal)"><div class="badge teal">05</div><h3 style="font-size:14px;margin-top:10px">UI against mock</h3><p style="font-size:12px;margin-top:6px">Env var + CORS + Playwright</p><div style="margin-top:10px;font-size:11px;color:var(--slate-3)">Hero workflow end-to-end</div></div>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <div class="col card" style="padding:16px">
+            <div style="font-size:12px;letter-spacing:0.08em;font-weight:800;color:var(--teal)">HELPERS — COPY TO YOUR PROJECT</div>
+            <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+              <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px"><div style="font-weight:800;font-size:12px">pact-helpers.js</div><div style="font-size:11px;color:var(--slate-3);margin-top:4px"><code>createPact()</code> • <code>withAuthHeader()</code></div></div>
+              <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px"><div style="font-weight:800;font-size:12px">wiremock-helpers.js</div><div style="font-size:11px;color:var(--slate-3);margin-top:4px"><code>startWireMock()</code> • <code>createMapping()</code></div></div>
+              <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px"><div style="font-weight:800;font-size:12px">data-factory.js</div><div style="font-size:11px;color:var(--slate-3);margin-top:4px"><code>makeUser()</code> • <code>makeUserList()</code></div></div>
+            </div>
+          </div>
+          <div class="col" style="flex:0.7">
+            <div class="card dark" style="padding:16px">
+              <div style="font-size:12px;letter-spacing:0.08em;font-weight:800;color:#5EEAD4">EACH EXERCISE HAS</div>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#E2E8F0">
+                <div>📄 <strong>README</strong> — What / Why / Diagram / Before-After</div>
+                <div>🧪 <strong>exercise.test.js</strong> — TODOs to fill</div>
+                <div>✅ <strong>solution/</strong> — working fix to compare</div>
+                <div>▶️ <strong>Run:</strong> <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:6px">npm test</code> per exercise</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 16 — 2-Terminal Workflow -->
+    <section class="slide" data-title="2-Terminal Workflow">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#0F172A 0%, #1E293B 100%);"></div>
+      <div class="vignette" style="background:radial-gradient(900px 500px at 20% 20%, rgba(14,154,139,0.18), transparent 60%)"></div>
+      <div class="slide-inner">
+        <div class="eyebrow" style="color:#5EEAD4">12 — Try It Now</div>
+        <h2 style="color:#fff">2-terminal workflow — <span style="color:#5EEAD4">copy, paste, run</span></h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:14px">
+          <div class="col card" style="background:rgba(255,255,255,0.96);padding:0;overflow:hidden">
+            <div style="background:var(--slate);color:#E2E8F0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;letter-spacing:0.08em;font-weight:800">TERMINAL 1 — Provider + WireMock</span><span class="pill teal" style="font-size:11px">:3000 + :8080</span></div>
+            <div class="code" style="border:none;border-radius:0;font-size:11px"> <span class="c"># 1. Go to demo app</span>
+ cd companion_files/contract-mock-demo-app
+
+ <span class="c"># 2. Install (what: downloads Express, Pact, Jest)</span>
+ npm install
+ <span class="c"># Expected: "added 45 packages"</span>
+
+ <span class="c"># 3. Start provider (where: Terminal 1)</span>
+ npm start
+ <span class="c"># Expected: "[contract-mock-demo-app] Server at http://localhost:3000"</span>
+
+ <span class="c"># 4. In another shell — start WireMock (pick one)</span>
+ docker run -it --rm -p 8080:8080 \
+   -v $PWD/wiremock:/home/wiremock \
+   wiremock/wiremock:3.13.2 --global-response-templating --enable-stub-cors
+ <span class="c"># Expected: "WireMock started on port 8080"</span></div>
+          </div>
+          <div class="col card" style="background:rgba(255,255,255,0.96);padding:0;overflow:hidden">
+            <div style="background:var(--teal);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;letter-spacing:0.08em;font-weight:800">TERMINAL 2 — Tests + Postman</span><span class="pill" style="background:#fff;color:var(--teal);font-size:11px">verify</span></div>
+            <div class="code" style="border:none;border-radius:0;font-size:11px;background:#F8FAFC;color:var(--slate);border-color:#E2E8F0"> <span class="c" style="color:#64748B"># 5. Run Pact tests (where: Terminal 2)</span>
+ npm test
+ <span class="c" style="color:#64748B"># Expected: 5 PASS + "Pact Verification Complete!"</span>
+ <span class="c" style="color:#64748B"># Check: ls pacts/ → WebApp-UserAPI.json (10 interactions)</span>
+
+ <span class="c" style="color:#64748B"># 6. Validate with Postman</span>
+ <span class="c" style="color:#64748B"># Import: companion_files/postman/Contract_Mock_Validation.postman_collection.json</span>
+ <span class="c" style="color:#64748B"># Set: baseUrl = http://localhost:8080 → Send → all green</span>
+
+ <span class="c" style="color:#64748B"># 7. Verify WireMock received requests</span>
+ curl http://localhost:8080/__admin/requests
+ <span class="c" style="color:#64748B"># Expected: { "requests": [{ "method": "GET", "url": "/users/1" }] }</span></div>
+          </div>
+        </div>
+        <div class="fragment row" style="margin-top:14px;gap:12px">
+          <div style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;color:#E2E8F0;font-size:13px">
+            <span style="width:32px;height:32px;border-radius:10px;background:var(--teal);display:grid;place-items:center">✓</span>
+            <span><strong style="color:#5EEAD4">What you should see:</strong> UI shows mock user data • Playwright PASS • WireMock log shows <code>GET /users/1</code></span>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;color:#E2E8F0;font-size:13px">
+            <span style="width:32px;height:32px;border-radius:10px;background:var(--amber);display:grid;place-items:center">⚠️</span>
+            <span><strong style="color:#FDE68A">What if it doesn't work?</strong> Port in use → <code>--port 9999</code> • CORS → <code>--enable-stub-cors</code> • Env var not picked up → restart dev server</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 17 — Glossary -->
+    <section class="slide" data-title="Glossary">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">13 — Glossary</div>
+        <h2>Key terms — <span class="teal">analogy-first</span></h2>
+        <div class="kicker-line"></div>
+        <div style="margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--teal);font-size:13px">Consumer</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Who <em>uses</em> the API (your UI). Like a customer ordering from a menu.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: Pact <code>consumer: 'WebApp'</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--teal);font-size:13px">Provider</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Who <em>builds</em> the API (backend). Like the kitchen making the menu.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: <code>provider: 'UserAPI'</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--teal);font-size:13px">Contract / Pact file</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Written agreement — requests & responses. The handshake.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: <code>pacts/*.json</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--teal);font-size:13px">Matcher</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Flexible rule — <code>like</code> for type, <code>regex</code> for format.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: <code>MatchersV3</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--amber);font-size:13px">Stub</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Canned response — like a recorded voicemail, same message every time.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Tool: WireMock <code>stubFor</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--amber);font-size:13px">Mock</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Stub + verification — voicemail that also tells you who called.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Tool: WireMock <code>verify()</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--slate);font-size:13px">WireMock mapping</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">JSON stub — <code>request</code> → <code>response</code> in <code>mappings/*.json</code>.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: <code>wiremock/mappings/</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--slate);font-size:13px">Response templating</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Handlebars — <code>{{request.path}} {{now}} {{randomValue}}</code>.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Needs <code>response-template</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--teal);font-size:13px">Verifier</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Checks real provider satisfies pacts — the CI gate.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: <code>new Verifier({...})</code></div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--teal);font-size:13px">can-i-deploy</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Gate — blocks deploy if verification failed. Pact Broker feature.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: CI pipeline</div></div>
+          <div class="card" style="padding:14px"><div style="font-weight:800;color:var(--slate);font-size:13px">pm.test</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Postman assertion — <code>pm.test("Status 200", () =&gt; pm.response.to.have.status(200))</code>.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: Post-response tab</div></div>
+          <div class="card teal" style="padding:14px"><div style="font-weight:800;color:var(--teal-dark);font-size:13px">Breaking change</div><div style="font-size:12px;color:var(--slate-2);margin-top:6px">Change that breaks consumer — field removal, type change, etc. 14 categories.</div><div style="font-size:11px;color:var(--slate-3);margin-top:8px">Where: checklist p30</div></div>
+        </div>
+        <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--slate-3)">Full glossary: 20 terms in PDF p35 • Every term defined on first use, analogy-first</div>
+      </div>
+    </section>
+
+    <!-- SLIDE 18 — What's Next -->
+    <section class="slide" data-title="What's Next">
+      <div class="slide-bg" style="background: linear-gradient(180deg,#FFFFFF 0%, #F8FAFC 100%);"></div>
+      <div class="vignette"></div>
+      <div class="slide-inner">
+        <div class="eyebrow">14 — Action Plan</div>
+        <h2>What's next — <span class="teal">create your own</span> in 30 min</h2>
+        <div class="kicker-line"></div>
+        <div class="row" style="margin-top:14px">
+          <div class="col card teal" style="text-align:center;padding:22px">
+            <div style="width:48px;height:48px;border-radius:14px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:22px;margin:0 auto">1</div>
+            <h3 style="margin-top:12px">Fork the demo</h3>
+            <p style="font-size:13px;margin-top:8px">Copy <code>contract-mock-demo-app/</code> → add your endpoint in <code>server.js</code> (one file, 120 lines).</p>
+            <div class="code" style="margin-top:12px;font-size:11px;padding:10px;text-align:left">app.get('/orders/:id', (req,res)=&gt;{
+  res.json({ id: req.params.id, total: 99 });
+});</div>
+          </div>
+          <div class="col card teal" style="text-align:center;padding:22px">
+            <div style="width:48px;height:48px;border-radius:14px;background:var(--amber);color:#1E293B;display:grid;place-items:center;font-size:22px;margin:0 auto">2</div>
+            <h3 style="margin-top:12px">Write a Pact test</h3>
+            <p style="font-size:13px;margin-top:8px">Copy <code>01-consumer-get-user.test.js</code> → change path/body/matchers for your API.</p>
+            <div class="code" style="margin-top:12px;font-size:11px;padding:10px;text-align:left">.uponReceiving('a request for order 1')
+.withRequest({ method: 'GET', path: '/orders/1' })
+.willRespondWith({ status: 200, body: { id: integer(1) }})</div>
+          </div>
+          <div class="col card teal" style="text-align:center;padding:22px">
+            <div style="width:48px;height:48px;border-radius:14px;background:var(--slate);color:#fff;display:grid;place-items:center;font-size:22px;margin:0 auto">3</div>
+            <h3 style="margin-top:12px">Verify & mock</h3>
+            <p style="font-size:13px;margin-top:8px">Run <code>npm test</code> → Verifier checks provider → create WireMock mapping → UI hits mock.</p>
+            <div class="code" style="margin-top:12px;font-size:11px;padding:10px;text-align:left">npm test  →  PASS
+curl http://localhost:8080/orders/1  →  200</div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <div class="col card" style="padding:16px;display:flex;gap:12px;align-items:center">
+            <span style="width:36px;height:36px;border-radius:10px;background:var(--teal-light);display:grid;place-items:center">📚</span>
+            <div><div style="font-weight:800;font-size:13px">Learning path — Read → Study → Learn → Practice → Training → Create</div><div style="font-size:12px;color:var(--slate-3)">PDF p5 • This deck • Templates • Demo • Practice Lab → Your API</div></div>
+          </div>
+          <div class="col card" style="padding:16px;display:flex;gap:12px;align-items:center">
+            <span style="width:36px;height:36px;border-radius:10px;background:#FEF3C7;display:grid;place-items:center">🔓</span>
+            <div><div style="font-weight:800;font-size:13px">Free & open-source — no lock-in</div><div style="font-size:12px;color:var(--slate-3)">Pact MIT • WireMock Apache 2.0 • Node MIT • Postman free tier</div></div>
+          </div>
+        </div>
+        <div class="fragment" style="margin-top:14px;background:var(--slate);color:#E2E8F0;border-radius:14px;padding:14px 18px;display:flex;gap:12px;align-items:center;justify-content:space-between">
+          <span style="font-size:13px"><strong style="color:#5EEAD4">Reusable helpers to copy:</strong> <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:6px">pact-helpers.js</code> <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:6px">wiremock-helpers.js</code> <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:6px">data-factory.js</code> → your project in 1 minute</span>
+          <span class="pill teal">No vendor lock-in</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 19 — Branding Close -->
+    <section class="slide" data-title="Close">
+      <div class="slide-bg" style="background: radial-gradient(900px 600px at 20% 20%, rgba(14,154,139,0.18), transparent 60%), radial-gradient(800px 500px at 80% 80%, rgba(245,158,11,0.12), transparent 60%), linear-gradient(180deg,#0F172A 0%, #1E293B 100%);"></div>
+      <div class="vignette"></div><div class="grain"></div>
+      <div class="slide-inner" style="justify-content:center;align-items:center;text-align:center">
+        <div class="pill" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#E2E8F0">SHAMSHUTALKS • SDET SERIES</div>
+        <h1 style="color:#fff;margin-top:18px;font-size:56px">Stop waiting.<br><span style="color:#5EEAD4">Start testing.</span></h1>
+        <div class="kicker-line" style="margin:18px auto"></div>
+        <p style="color:#CBD5E1;max-width:720px;font-size:18px">You now have the exact setup to test UI against mocks while backend builds — 5 Pact templates, 3 WireMock scripts, Postman collection, and a breaking-change checklist. Fork the demo, add your API, and ship with confidence.</p>
+        <div style="margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <a href="https://www.youtube.com/@shamshutalks" style="text-decoration:none" class="pill teal">▶ YouTube @shamshutalks</a>
+          <a href="https://www.linkedin.com" style="text-decoration:none" class="pill" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#E2E8F0">in LinkedIn</a>
+          <a href="https://topmate.io" style="text-decoration:none" class="pill amber">✦ Book 1:1 — topmate.io</a>
+        </div>
+        <div style="margin-top:28px;display:flex;gap:16px;justify-content:center;align-items:center">
+          <div style="width:110px;height:110px;background:#fff;border-radius:16px;display:grid;place-items:center;box-shadow:0 12px 30px rgba(0,0,0,0.3)">
+            <div style="width:90px;height:90px;background:repeating-linear-gradient(0deg,#1E293B 0 2px, #fff 2px 4px), repeating-linear-gradient(90deg,#1E293B 0 2px, #fff 2px 4px);border-radius:8px;display:grid;place-items:center;font-size:10px;color:var(--slate);font-weight:800;letter-spacing:0.08em">QR<br>REPO</div>
+          </div>
+          <div style="text-align:left;color:#E2E8F0">
+            <div style="font-weight:800;font-size:14px;color:#fff">Scan to get the kit</div>
+            <div style="font-size:12px;color:#94A3B8;margin-top:4px">PDF (35 pages) + Demo App + Practice Lab<br>All files on disk — no external deps</div>
+            <div style="margin-top:8px;display:flex;gap:6px"><span class="pill" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#E2E8F0;font-size:11px">Node 18+</span><span class="pill" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#E2E8F0;font-size:11px">Pact 17.1.3</span><span class="pill" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#E2E8F0;font-size:11px">WireMock 3.13.2</span></div>
+          </div>
+        </div>
+        <div style="margin-top:28px;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#64748B">© 2026 ShamshuTalks • Crafted for SDETs • Free & Open-Source Stack • No vendor lock-in</div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const progress = document.getElementById('progress');
+  const counter = document.getElementById('counter');
+  const dots = document.getElementById('dots');
+  const stage = document.getElementById('stage');
+  const wrap = document.getElementById('wrap');
+  let idx = 0;
+  let renderIdleTimer = null;
+
+  // Dots
+  slides.forEach((_,i)=>{
+    const b=document.createElement('button');
+    b.setAttribute('aria-label','Go to slide '+(i+1));
+    b.addEventListener('click',()=>go(i));
+    dots.appendChild(b);
+  });
+
+  function scaleStage(){
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const sx = vw/1920, sy = vh/1080;
+    const s = Math.min(sx, sy);
+    stage.style.transform = 'scale('+s+')';
+    // center via wrap flex; stage is 1920x1080 scaled
+    wrap.style.height = vh+'px';
+  }
+  window.addEventListener('resize', scaleStage);
+  scaleStage();
+
+  function updateChrome(){
+    const pct = ((idx+1)/slides.length)*100;
+    progress.style.width = pct+'%';
+    counter.textContent = (idx+1)+' / '+slides.length;
+    Array.from(dots.children).forEach((d,i)=>d.classList.toggle('active', i===idx));
+    // render-idle detection
+    stage.removeAttribute('data-render-idle');
+    clearTimeout(renderIdleTimer);
+    renderIdleTimer = setTimeout(()=> stage.setAttribute('data-render-idle','true'), 700);
+    // poster frames: mark canvas if any
+    document.querySelectorAll('canvas').forEach(c=> c.setAttribute('data-poster','ready'));
+  }
+
+  function fragmentsFor(i){
+    return Array.from(slides[i].querySelectorAll('.fragment'));
+  }
+  function hasHiddenFragments(i){
+    return fragmentsFor(i).some(f=> !f.classList.contains('visible'));
+  }
+  function revealNextFragment(i){
+    const frags = fragmentsFor(i);
+    const next = frags.find(f=> !f.classList.contains('visible'));
+    if(next){ next.classList.add('visible'); return true; }
+    return false;
+  }
+  function resetFragments(i){
+    fragmentsFor(i).forEach(f=> f.classList.remove('visible'));
+  }
+
+  function go(n){
+    if(n<0) n=0;
+    if(n>=slides.length) n=slides.length-1;
+    // if moving forward and current has hidden fragments, reveal instead
+    // handled in next(); go() is direct jump so reset
+    slides[idx].classList.remove('active');
+    idx = n;
+    slides[idx].classList.add('active');
+    // reset fragments of new slide to hidden initially, then allow reveal via next()
+    // keep fragments hidden until user advances
+    updateChrome();
+  }
+
+  function next(){
+    if(hasHiddenFragments(idx)){
+      revealNextFragment(idx);
+      updateChrome();
+      return;
+    }
+    if(idx < slides.length-1) go(idx+1);
+  }
+  function prev(){
+    // if current slide has visible fragments, hide last visible first
+    const frags = fragmentsFor(idx);
+    const visible = frags.filter(f=> f.classList.contains('visible'));
+    if(visible.length>0){
+      visible[visible.length-1].classList.remove('visible');
+      updateChrome();
+      return;
+    }
+    if(idx>0) {
+      go(idx-1);
+      // when going back, show all fragments of that slide (flattened final state for review)
+      // but keep them hidden to allow forward reveal again — so reset
+      resetFragments(idx);
+    }
+  }
+
+  // Click to next (but not when clicking dots)
+  stage.addEventListener('click', (e)=>{
+    if(e.target.closest('.nav-dots') || e.target.closest('a') || e.target.closest('button')) return;
+    next();
+  });
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowRight' || e.key===' ' || e.key==='PageDown') { e.preventDefault(); next(); }
+    else if(e.key==='ArrowLeft' || e.key==='PageUp') { e.preventDefault(); prev(); }
+    else if(e.key==='Home') { e.preventDefault(); go(0); }
+    else if(e.key==='End') { e.preventDefault(); go(slides.length-1); }
+    else if(e.key==='p' || e.key==='P') { window.print(); }
+  });
+
+  // Touch swipe
+  let sx=0;
+  stage.addEventListener('touchstart', e=> sx=e.touches[0].clientX, {passive:true});
+  stage.addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - sx;
+    if(Math.abs(dx)>40) { if(dx<0) next(); else prev(); }
+  }, {passive:true});
+
+  // Init
+  updateChrome();
+  // Ensure first slide fragments hidden initially
+  slides.forEach((s,i)=> { if(i!==0) resetFragments(i); });
+})();
+</script>
+</body>
+</html>
